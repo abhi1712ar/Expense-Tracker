@@ -1,0 +1,41 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ExpenseTracker</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/Register.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ExpenseTracker.styles.css" asp-append-version="true" />
+</head>
+<body data-success="@TempData["Success"]" data-error="@TempData["Error"]">
+    <div id="fullpage-loader" class="loader-overlay">
+        <div class="loader"></div>
+    </div>
+
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <!-- SUCCESS TOAST -->
+    <div id="toast-success" class="toast-box">
+        <span class="toast-icon">✔</span>
+        <span class="toast-message">Success message</span>
+    </div>
+
+    <!-- ERROR TOAST -->
+    <div id="toast-error" class="toast-box toast-error">
+        <span class="toast-icon">✖</span>
+        <span class="toast-message">Error message</span>
+    </div>
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/Register.js" asp-append-version="true"></script>
+    @*  @await RenderSectionAsync("Scripts", required: false) *@
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

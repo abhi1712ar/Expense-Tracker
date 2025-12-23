@@ -1,0 +1,48 @@
+﻿@model ExpenseTracker.ViewModel.LoginViewModel
+@{
+    ViewData["Title"] = "LoginPage";
+    Layout = "_LayoutSignUp";
+}
+
+<div class="register-wrapper">
+    <div class="register-card">
+
+        <!-- LEFT DESIGN PANEL -->
+        <div class="left-panel">
+            <div class="logo">💸</div>
+            <h3>Welcome to Expense Tracker</h3>
+        </div>
+
+        <!-- RIGHT FORM PANEL -->
+        <div class="right-panel">
+            <h3 class="text-center">Sign In</h3>
+            <div class="text-center">
+                <p class="parag">Don't have an account? <a class="underline-hover text-success parag" asp-action="Register">Register</a></p>
+            </div>
+
+            <form asp-action="LoginPage" method="post">
+
+                <div class="form-group"
+                     data-error="@ViewData.ModelState[nameof(Model.UserName)]?.Errors.FirstOrDefault()?.ErrorMessage">
+                    <input asp-for="UserName" class="underline-input" placeholder="Name" autocomplete="off" />
+                </div>
+
+                <div class="form-group"
+                     data-error="@(ViewData.ModelState[nameof(Model.Password)]?.Errors.FirstOrDefault()?.ErrorMessage
+                                                                                   ?? ViewData.ModelState[string.Empty]?.Errors.FirstOrDefault()?.ErrorMessage)">
+                    <input asp-for="Password" type="password" class="underline-input" placeholder="Password" autocomplete="off" />
+                </div>
+
+                <div class="text-left">
+                    <a class="underline-hover text-black" style="font-size:12px;font-family:Arial, Helvetica, sans-serif" asp-action="ForgetPassword">Forgot your password?</a>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="button-62">Sign In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="~/js/Register.js" asp-append-version="true"></script>
+

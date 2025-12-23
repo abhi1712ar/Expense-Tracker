@@ -1,0 +1,332 @@
+﻿@model ExpenseTracker.ViewModel.Expense.ExpenseIndexViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Expense";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/Expense.css" asp-append-version="true" />
+
+<div class="dashboard-page">
+
+    <!-- ===== EXPENSE OVERVIEW CHART ===== -->
+    <section class="panel expense-overview-panel">
+        <div class="panel-header">
+            <div>
+                <h3>Expense Overview</h3>
+                <p class="panel-subtitle">Track your spending trends and see where money goes.</p>
+            </div>
+
+            <button type="button"
+                    class="chip-button primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addExpenseModal">
+                + Add Expense
+            </button>
+        </div>
+
+        <div class="expense-chart-wrapper">
+            <canvas id="expenseOverviewChart"></canvas>
+        </div>
+    </section>
+
+    <!-- ===== ALL EXPENSES LIST ===== -->
+    <section class="panel expense-list-panel">
+        <div class="panel-header">
+            <h3>All Expenses</h3>
+            <a asp-action="Download" class="chip-button">⬇ Download</a>
+        </div>
+
+        @if (!Model.ExpenseList.Any())
+        {
+            <div class="empty-state">No expenses added yet.</div>
+        }
+        else
+        {
+            <div class="expense-sources-grid">
+                @foreach (var exp in Model.ExpenseList)
+                {
+                    <div class="expense-row">
+                        <div class="expense-left">
+                            <div class="expense-icon">
+                                @(string.IsNullOrEmpty(exp.Icon) ? "💳" : exp.Icon)
+                            </div>
+                            <div class="expense-meta">
+                                <div class="expense-title">@exp.Category</div>
+                                <div class="expense-date">@exp.Date.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+
+                        <div class="expense-right">
+                            <span class="expense-amount">-@exp.Amount.ToString("C0")</span>
+
+                            <!-- EDIT BUTTON -->
+                            <button type="button"
+                                    class="icon-button edit-icon"
+                                    data-edit-id="@exp.Id"
+                                    data-edit-icon="@exp.Icon"
+                                    data-edit-category="@exp.Category"
+                                    data-edit-amount="@exp.Amount"
+                                    data-edit-date='@exp.Date.ToString("yyyy-MM-dd")'>
+                                ✏️
+                            </button>
+
+                            <!-- DELETE BUTTON -->
+                            <button type="button"
+                                    class="icon-button"
+                                    data-delete-id="@exp.Id">
+                                🗑
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<!-- ======================
+     ADD EXPENSE MODAL
+     ====================== -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content expense-modal">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Add Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-action="Add" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-body">
+
+                    <!-- Icon picker -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Pick Icon</label>
+                        <div class="emoji-picker">
+                            <label><input type="radio" asp-for="NewExpense.IconEmoji" value="🛒" /><span>🛒</span></label>
+                            <label><input type="radio" asp-for="NewExpense.IconEmoji" value="🍔" /><span>🍔</span></label>
+                            <label><input type="radio" asp-for="NewExpense.IconEmoji" value="🚗" /><span>🚗</span></label>
+                            <label><input type="radio" asp-for="NewExpense.IconEmoji" value="💡" /><span>💡</span></label>
+                            <label><input type="radio" asp-for="NewExpense.IconEmoji" value="💳" /><span>💳</span></label>
+                        </div>
+                        <span asp-validation-for="NewExpense.IconEmoji" class="text-danger"></span>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Category</label>
+                        <input asp-for="NewExpense.Category" class="form-control nice-input" placeholder="Shopping, Rent, Groceries, etc" />
+                        <span asp-validation-for="NewExpense.Category" class="text-danger"></span>
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Amount</label>
+                        <input asp-for="NewExpense.Amount" class="form-control nice-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="NewExpense.Amount" class="text-danger"></span>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Date</label>
+                        <input asp-for="NewExpense.Date" class="form-control nice-input" type="date" />
+                        <span asp-validation-for="NewExpense.Date" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ======================
+     EDIT EXPENSE MODAL
+     ====================== -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content expense-modal">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Note: this posts to ExpenseController.Update(EditExpenseViewModel model) -->
+            <form asp-action="Update" method="post">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" name="Id" id="editExpenseId" />
+
+                <div class="modal-body">
+
+                    <!-- Icon picker -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Pick Icon</label>
+                        <div class="emoji-picker">
+                            <label><input type="radio" name="IconEmoji" value="🛒" /><span>🛒</span></label>
+                            <label><input type="radio" name="IconEmoji" value="🍔" /><span>🍔</span></label>
+                            <label><input type="radio" name="IconEmoji" value="🚗" /><span>🚗</span></label>
+                            <label><input type="radio" name="IconEmoji" value="💡" /><span>💡</span></label>
+                            <label><input type="radio" name="IconEmoji" value="💳" /><span>💳</span></label>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Category</label>
+                        <input name="Category" id="editCategory" class="form-control nice-input" />
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Amount</label>
+                        <input name="Amount"
+                               id="editAmount"
+                               class="form-control nice-input"
+                               type="number"
+                               step="0.01"
+                               min="0" />
+                    </div>
+
+                    <!-- Date -->
+                    <div class="form-group mb-3">
+                        <label class="form-label fw-bold">Date</label>
+                        <input name="Date"
+                               id="editDate"
+                               class="form-control nice-input"
+                               type="date" />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ======================
+     DELETE MODAL
+     ====================== -->
+<div class="modal fade" id="deleteExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content expense-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteExpenseId" />
+
+                <div class="modal-body">
+                    Are you sure you want to delete this expense?
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="chip-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="chip-button danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // ===== Smooth purple area line chart (like screenshot) =====
+        (function () {
+            const canvas = document.getElementById('expenseOverviewChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            const labels = @Html.Raw(JsonSerializer.Serialize(Model.ChartLabels));
+            const data = @Html.Raw(JsonSerializer.Serialize(Model.ChartData));
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(129, 140, 248, 0.45)');
+            gradient.addColorStop(1, 'rgba(129, 140, 248, 0.02)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        fill: true,
+                        backgroundColor: gradient,
+                        borderColor: '#8b5cf6',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointBorderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `Amount: ${ctx.parsed.y}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { beginAtZero: true, grid: { color: '#e5e7eb' }, ticks: { font: { size: 11 } } }
+                    }
+                }
+            });
+        })();
+
+        // ===== Delete modal wiring =====
+        document.querySelectorAll('[data-delete-id]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('deleteExpenseId').value = this.dataset.deleteId;
+                new bootstrap.Modal(document.getElementById('deleteExpenseModal')).show();
+            });
+        });
+
+        // ===== Edit modal wiring =====
+        document.querySelectorAll('[data-edit-id]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.editId;
+                const category = this.dataset.editCategory;
+                const amount = this.dataset.editAmount;
+                const date = this.dataset.editDate;
+                const icon = this.dataset.editIcon || '';
+
+                document.getElementById('editExpenseId').value = id;
+                document.getElementById('editCategory').value = category;
+                document.getElementById('editAmount').value = amount;
+                document.getElementById('editDate').value = date;
+
+                // select the right icon radio
+                document.querySelectorAll('#editExpenseModal input[name="IconEmoji"]').forEach(r => {
+                    r.checked = (r.value === icon);
+                });
+
+                new bootstrap.Modal(document.getElementById('editExpenseModal')).show();
+            });
+        });
+    </script>
+}

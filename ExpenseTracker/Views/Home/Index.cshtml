@@ -1,0 +1,150 @@
+﻿@model ExpenseTracker.ViewModel.Dashboard.DashboardViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";  // use your main layout
+}
+
+<link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
+
+<div class="dashboard-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="avatar-circle">U</div>
+            <div class="user-name">@User.Identity?.Name</div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a asp-controller="Home" asp-action="Index" class="menu-item active">
+                <span class="menu-icon">▢</span>
+                <span>Dashboard</span>
+            </a>
+            <a asp-controller="Income" asp-action="Index" class="menu-item">
+                <span class="menu-icon">📈</span>
+                <span>Income</span>
+            </a>
+            <a asp-controller="Expense" asp-action="Index" class="menu-item">
+                <span class="menu-icon">💸</span>
+                <span>Expense</span>
+            </a>
+            <a asp-controller="Home" asp-action="Logout" class="menu-item">
+                <span class="menu-icon">↩</span>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOP SUMMARY CARDS -->
+        <section class="summary-cards">
+            <div class="card summary-card purple">
+                <div class="card-title">Total Balance</div>
+                <div class="card-amount">@Model.Balance.ToString("C0")</div>
+            </div>
+            <div class="card summary-card orange">
+                <div class="card-title">Total Income</div>
+                <div class="card-amount">@Model.TotalIncome.ToString("C0")</div>
+            </div>
+            <div class="card summary-card red">
+                <div class="card-title">Total Expenses</div>
+                <div class="card-amount">@Model.TotalExpense.ToString("C0")</div>
+            </div>
+        </section>
+
+        <!-- RECENT + DONUT -->
+        <section class="grid-two-cols mb-24">
+
+            <!-- Recent Transactions -->
+            <div class="card big-card">
+                <div class="card-header">
+                    <h4>Recent Transactions</h4>
+                    <button class="see-all-btn">See All →</button>
+                </div>
+
+                <div class="tx-list">
+                    @if (!Model.RecentTransactions.Any())
+                    {
+                        <div class="empty-text">No transactions yet.</div>
+                    }
+                    else
+                    {
+                        foreach (var tx in Model.RecentTransactions)
+                        {
+                            <div class="tx-row">
+                                <div class="tx-left">
+                                    <div class="tx-icon-circle @(tx.IsIncome ? "income" : "expense")">
+                                        @tx.Title[0]
+                                    </div>
+                                    <div>
+                                        <div class="tx-title">@tx.Title</div>
+                                        <div class="tx-date">@tx.Date.ToString("dd MMM yyyy")</div>
+                                    </div>
+                                </div>
+                                <div class="tx-right">
+                                    @if (tx.IsIncome)
+                                    {
+                                        <span class="tx-amount income">+@tx.Amount.ToString("C0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="tx-amount expense">-@tx.Amount.ToString("C0")</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Financial Overview Donut -->
+            <div class="card big-card">
+                <div class="card-header">
+                    <h4>Financial Overview</h4>
+                </div>
+                <div class="donut-wrapper">
+                    <canvas id="financialChart"></canvas>
+                </div>
+                <div class="donut-legend">
+                    <span class="legend-dot balance"></span> Total Balance
+                    <span class="legend-dot income"></span> Total Income
+                    <span class="legend-dot expense"></span> Total Expenses
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const donutLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DonutLabels));
+        const donutData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DonutData));
+
+        const ctx = document.getElementById('financialChart').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: donutLabels,
+                datasets: [{
+                    data: donutData,
+                    backgroundColor: ['#6C5CE7', '#00B894', '#FF7675'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+}

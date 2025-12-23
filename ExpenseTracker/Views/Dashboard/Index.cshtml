@@ -1,0 +1,352 @@
+﻿@* Dashboard main view *@
+@model ExpenseTracker.ViewModel.Dashboard.DashboardViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
+
+<div class="dashboard-page">
+
+    @* =========================
+       ROW 1: SUMMARY CARDS
+       ========================= *@
+    <section class="summary-row">
+        <div class="summary-card card-balance">
+            <div class="summary-card-header">
+                <span class="summary-label">Total Balance</span>
+                <span class="summary-icon">💳</span>
+            </div>
+            <div class="summary-value">@Model.Balance.ToString("C0")</div>
+            <div class="summary-subtext">Net balance (Income − Expenses)</div>
+        </div>
+
+        <div class="summary-card card-income">
+            <div class="summary-card-header">
+                <span class="summary-label">Total Income</span>
+                <span class="summary-icon">📈</span>
+            </div>
+            <div class="summary-value">@Model.TotalIncome.ToString("C0")</div>
+            <div class="summary-subtext">All income recorded</div>
+        </div>
+
+        <div class="summary-card card-expense">
+            <div class="summary-card-header">
+                <span class="summary-label">Total Expenses</span>
+                <span class="summary-icon">💸</span>
+            </div>
+            <div class="summary-value">@Model.TotalExpense.ToString("C0")</div>
+            <div class="summary-subtext">Total amount spent</div>
+        </div>
+    </section>
+
+    @* =========================
+       ROW 2: RECENT + MAIN DONUT
+       ========================= *@
+    <section class="bottom-grid">
+        @* Recent Transactions *@
+        <div class="panel panel-transactions">
+            <div class="panel-header">
+                <h3>Recent Transactions</h3>
+                <button type="button" class="chip-button">See All</button>
+            </div>
+
+            @if (!Model.RecentTransactions.Any())
+            {
+                <div class="empty-state">No transactions yet.</div>
+            }
+            else
+            {
+                <div class="tx-list">
+                    @foreach (var tx in Model.RecentTransactions)
+                    {
+                        <div class="tx-row">
+                            <div class="tx-left">
+                                <div class="tx-icon-circle @(tx.IsIncome ? "tx-income" : "tx-expense")">
+                                    @tx.Title[0]
+                                </div>
+                                <div class="tx-meta">
+                                    <div class="tx-title">@tx.Title</div>
+                                    <div class="tx-date">@tx.Date.ToString("dd MMM yyyy")</div>
+                                </div>
+                            </div>
+                            <div class="tx-right">
+                                @if (tx.IsIncome)
+                                {
+                                    <span class="tx-amount income">+@tx.Amount.ToString("C0")</span>
+                                }
+                                else
+                                {
+                                    <span class="tx-amount expense">-@tx.Amount.ToString("C0")</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* Financial Overview Donut *@
+        <div class="panel panel-chart">
+            <div class="panel-header">
+                <h3>Financial Overview</h3>
+            </div>
+
+            <div class="donut-container">
+                <canvas id="financialDonut"></canvas>
+                <div class="donut-center">
+                    <span class="donut-center-label">Balance</span>
+                    <span class="donut-center-value">@Model.Balance.ToString("C0")</span>
+                </div>
+            </div>
+
+            <div class="donut-legend">
+                <div class="legend-item">
+                    <span class="legend-dot legend-balance"></span><span>Total Balance</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot legend-income"></span><span>Total Income</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot legend-expense"></span><span>Total Expenses</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* =========================
+       ROW 3: EXPENSES
+       Left: Expenses list
+       Right: Last 30 Days Expenses bar chart
+       ========================= *@
+    <section class="section-two-grid">
+        @* EXPENSES LIST *@
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Expenses</h3>
+                <button type="button" class="chip-button">See All</button>
+            </div>
+
+            @if (!Model.RecentExpenses.Any())
+            {
+                <div class="empty-state">No expenses added yet.</div>
+            }
+            else
+            {
+                <div class="tx-list">
+                    @foreach (var e in Model.RecentExpenses)
+                    {
+                        <div class="tx-row">
+                            <div class="tx-left">
+                                <div class="tx-icon-circle tx-expense">
+                                    @(!string.IsNullOrEmpty(e.Category) ? e.Category[0] : 'E')
+                                </div>
+                                <div class="tx-meta">
+                                    <div class="tx-title">@e.Category</div>
+                                    <div class="tx-date">@e.Date.ToString("dd MMM yyyy")</div>
+                                </div>
+                            </div>
+                            <div class="tx-right">
+                                <span class="tx-amount expense">-@e.Amount.ToString("C0")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @* LAST 30 DAYS EXPENSES BAR CHART *@
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Last 30 Days Expenses</h3>
+            </div>
+            <div class="bar-chart-wrapper">
+                <canvas id="expensesBarChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    @* =========================
+       ROW 4: INCOME
+       Left: Last 60 Days Income donut
+       Right: Income list
+       ========================= *@
+    <section class="section-two-grid">
+        @* LAST 60 DAYS INCOME DONUT *@
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Last 60 Days Income</h3>
+            </div>
+            <div class="donut-container">
+                <canvas id="incomeSourcesDonut"></canvas>
+                <div class="donut-center">
+                    <span class="donut-center-label">Income</span>
+                    <span class="donut-center-value">
+                        @Model.TotalIncome.ToString("C0")
+                    </span>
+                </div>
+            </div>
+            <div class="donut-legend">
+                @for (int i = 0; i < Model.IncomeSourceLabels.Count; i++)
+                {
+                    <div class="legend-item">
+                        <span class="legend-dot legend-income"></span>
+                        <span>@Model.IncomeSourceLabels[i]</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* INCOME LIST *@
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Income</h3>
+                <button type="button" class="chip-button">See All</button>
+            </div>
+
+            @if (!Model.RecentIncome.Any())
+            {
+                <div class="empty-state">No income added yet.</div>
+            }
+            else
+            {
+                <div class="tx-list">
+                    @foreach (var inc in Model.RecentIncome)
+                    {
+                        <div class="tx-row">
+                            <div class="tx-left">
+                                <div class="tx-icon-circle tx-income">
+                                    @(!string.IsNullOrEmpty(inc.Source) ? inc.Source[0] : 'I')
+                                </div>
+                                <div class="tx-meta">
+                                    <div class="tx-title">@inc.Source</div>
+                                    <div class="tx-date">@inc.Date.ToString("dd MMM yyyy")</div>
+                                </div>
+                            </div>
+                            <div class="tx-right">
+                                <span class="tx-amount income">+@inc.Amount.ToString("C0")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // -----------------------------
+        // MAIN FINANCIAL OVERVIEW DONUT
+        // -----------------------------
+        (function () {
+            const ctx = document.getElementById('financialDonut');
+            if (!ctx) return;
+
+            const labels = @Html.Raw(JsonSerializer.Serialize(Model.DonutLabels));
+            const data = @Html.Raw(JsonSerializer.Serialize(Model.DonutData));
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#7F5DFF', '#00D8A4', '#FF5C7A'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        })();
+
+        // -----------------------------
+        // LAST 30 DAYS EXPENSES BAR CHART
+        // -----------------------------
+        (function () {
+            const ctx = document.getElementById('expensesBarChart');
+            if (!ctx) return;
+
+            const labels = @Html.Raw(JsonSerializer.Serialize(Model.ExpenseBarLabels));
+            const data = @Html.Raw(JsonSerializer.Serialize(Model.ExpenseBarData));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: '#7C3AED',
+                        borderRadius: 8,
+                        maxBarThickness: 32
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#E5E7EB' }
+                        }
+                    }
+                }
+            });
+        })();
+
+        // -----------------------------
+        // LAST 60 DAYS INCOME SOURCES DONUT
+        // -----------------------------
+        (function () {
+            const ctx = document.getElementById('incomeSourcesDonut');
+            if (!ctx) return;
+
+            const labels = @Html.Raw(JsonSerializer.Serialize(Model.IncomeSourceLabels));
+            const data = @Html.Raw(JsonSerializer.Serialize(Model.IncomeSourceData));
+
+            if (!labels.length) return; // no income sources -> skip chart
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#FF6B6B',
+                            '#FFD166',
+                            '#06D6A0',
+                            '#118AB2',
+                            '#9B5DE5',
+                            '#F15BB5'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        })();
+    </script>
+}

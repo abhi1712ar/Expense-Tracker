@@ -1,0 +1,99 @@
+﻿/* ============================
+   GLOBAL DASHBOARD LAYOUT
+   ============================ */
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #f4f6fb;
+    display: flex;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* ----------------------------
+   SIDEBAR
+   ---------------------------- */
+.sidebar {
+    width: 240px;
+    min-width: 240px;
+    height: 100vh;
+    background: #ffffff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 25px 18px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.08);
+}
+
+.sidebar-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.avatar-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #7b5bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin: 0 auto 8px auto;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.sidebar-menu {
+    margin-top: 15px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: #444;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+    .menu-item:hover {
+        background: #ececff;
+        color: #5a3efc;
+    }
+
+    .menu-item.active {
+        background: #e8e4ff;
+        color: #4c32f2;
+        font-weight: 600;
+    }
+
+.logout-btn {
+    color: #d11d1d !important;
+}
+
+
+/* ----------------------------
+   MAIN CONTENT AREA
+   ---------------------------- */
+.main-content {
+    margin-left: 260px; /* Space for sidebar */
+    padding: 40px 45px;
+    width: calc(100% - 260px);
+    min-height: 100vh;
+}
+
+/* Responsive: Shrink padding on smaller screens */
+@media (max-width: 900px) {
+    .main-content {
+        padding: 25px 20px;
+    }
+}

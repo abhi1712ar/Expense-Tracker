@@ -1,0 +1,66 @@
+﻿@model ExpenseTracker.ViewModel.RegisterViewModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Register";
+    Layout = "~/Views/Shared/_LayoutSignUP.cshtml";
+}
+
+<div class="register-wrapper">
+    <div class="register-card">
+
+        <!-- LEFT DESIGN PANEL -->
+        <div class="left-panel">
+            <div class="logo">💸</div>
+            <h3>Welcome to Expense Tracker</h3>
+        </div>
+
+        <!-- RIGHT FORM PANEL -->
+        <div class="right-panel">
+            <h3 class="text-center">Create your account</h3>
+            <p class="parag text-center">
+                Already have an account?
+                <a class="underline-hover text-success parag" asp-action="LoginPage">Sign In</a>
+            </p>
+
+            <form asp-controller="Home" asp-action="Register" method="post">
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <!-- USERNAME -->
+                <div class="form-group"
+                     data-error="@ViewData.ModelState[nameof(Model.UserName)]?.Errors.FirstOrDefault()?.ErrorMessage">
+                    <input asp-for="UserName" class="underline-input" placeholder="Name" autocomplete="off" />
+                </div>
+
+                <!-- EMAIL -->
+                <div class="form-group"
+                     data-error="@ViewData.ModelState[nameof(Model.EmailId)]?.Errors.FirstOrDefault()?.ErrorMessage">
+                    <input asp-for="EmailId" class="underline-input" placeholder="Email Address" autocomplete="off" />
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="form-group"
+                     data-error="@(ViewData.ModelState[nameof(Model.Password)]?.Errors.FirstOrDefault()?.ErrorMessage
+                                         ?? ViewData.ModelState[string.Empty]?.Errors.FirstOrDefault()?.ErrorMessage)">
+                    <input asp-for="Password" type="password" class="underline-input" placeholder="Password" autocomplete="off" />
+                </div>
+
+
+                <!-- CONFIRM PASSWORD -->
+                <div class="form-group"
+                     data-error="@(ViewData.ModelState[nameof(Model.ConfirmPassword)]?.Errors.FirstOrDefault()?.ErrorMessage
+                                         ?? ViewData.ModelState[string.Empty]?.Errors.FirstOrDefault()?.ErrorMessage)">
+                    <input asp-for="ConfirmPassword" type="password" class="underline-input" placeholder="Confirm Password" autocomplete="off" />
+                </div>
+
+
+                <div class="text-center">
+                    <button type="submit" class="button-62">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/Register.js" asp-append-version="true"></script>
+

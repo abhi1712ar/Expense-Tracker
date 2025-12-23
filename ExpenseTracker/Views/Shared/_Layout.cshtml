@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ExpenseTracker</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- General site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- GLOBAL DASHBOARD LAYOUT CSS -->
+    <link rel="stylesheet" href="~/css/DashboardLayout.css" asp-append-version="true" />
+</head>
+
+<body>
+
+    <!-- ===========================
+         GLOBAL SIDEBAR FOR ALL PAGES
+         =========================== -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="avatar-circle">
+                @(
+                                User.Identity != null && User.Identity.Name != null
+                                ? User.Identity.Name[0].ToString().ToUpper()
+                                : "U"
+                                )
+            </div>
+            <div class="user-name">@User.Identity?.Name</div>
+        </div>
+
+        <nav class="sidebar-menu">
+
+            <!-- Dashboard -->
+            <a asp-controller="Dashboard" asp-action="Index"
+               class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                📊 Dashboard
+            </a>
+
+            <!-- Income -->
+            <a asp-controller="Income" asp-action="Index"
+               class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Income" ? "active" : "")">
+                📈 Income
+            </a>
+
+            <!-- Expense -->
+            <a asp-controller="Expense" asp-action="Index"
+               class="menu-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Expense" ? "active" : "")">
+                💸 Expense
+            </a>
+
+            <!-- Logout -->
+            <a asp-controller="Home" asp-action="Logout" class="menu-item logout-btn">
+                ↩ Logout
+            </a>
+        </nav>
+    </aside>
+
+
+    <!-- ===========================
+         MAIN PAGE BODY CONTENT
+         =========================== -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+
+    <!-- SCRIPTS -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>
